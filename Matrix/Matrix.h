@@ -19,6 +19,9 @@ namespace DataNS
 		nullPtr, rCode, cCode
 	};
 
+	/**
+		Common class for handling calculations. Contains DataWrap which should be used for operations.	
+	*/
 	class Data
 	{
 	public:
@@ -28,8 +31,23 @@ namespace DataNS
 			\return			result of the operation
 		*/
 		virtual ErrCodes add(Data *dt) = 0;
+		/**
+			Substracts an object of the same type of the current one. Should not be used directly
+			\param	dt	-	pointer to an object of the same type; otherwise a ErrCodes::bad_ptr would be returned
+			\return			result of the operation
+		*/
 		virtual ErrCodes substract(Data *dt) = 0;
+		/**
+			Multiplies the current object by the one of the same type. Should not be used directly
+			\param	dt	-	pointer to an object of the same type; otherwise a ErrCodes::bad_ptr would be returned
+			\return			result of the operation
+		*/
 		virtual ErrCodes multiply(Data *dt) = 0;
+		/**
+			Divides the current object by the one of the same type. Should not be used directly
+			\param	dt	-	pointer to an object of the same type; otherwise a ErrCodes::bad_ptr would be returned
+			\return			result of the operation
+		*/
 		virtual ErrCodes divide(Data *dt) = 0;
 		virtual long double abs(void) = 0;
 		//virtual Data* sin() = 0;
@@ -48,17 +66,42 @@ namespace DataNS
 		//virtual Data* log10() = 0;
 		//virtual Data* exp() = 0;
 		//virtual Data* pow(Data*) = 0;
+		/**
+			Used to write the contents of this object to the specified output stream.
+			\param	ss	-	output stream, where data are to be written
+		*/
 		virtual void output(ostream& ss) = 0;
+		/**
+			Returns the conjugated object of this one.
+			\return		conjugated object
+		*/
 		virtual Data* conjugate() = 0;
+		/**
+			Clones current object and its data. The result is independent from this object.
+			\return		cloned object
+		*/
 		virtual Data* clone() = 0;
+		/**
+			Used for objects' comminication. Do not use directly.
+		*/
+		//Returns the encapsulated data in a specific form
 		virtual void* _getData() = 0;
+		/**
+			Determines if this object is a neutral one for addition.
+		*/
 		virtual bool isZero() = 0;
 		virtual ~Data() {};
+		/**
+			Class that handles Data calculations and offers more flexibility. Designed for the direct usage.
+		*/
 		class DataWrap;
 	private:
+		//Implements type conversion for Data inheritants. Should be extended if new types and added.
 		static void _argConvert(Data** arg1, Data** arg2) throw (ErrCodes);
+		//Returns the code of Data inheritant. Should be extended if new types and added.
 		static DataCodes _getCode(Data* code) throw (ErrCodes);
 	protected:
+		//Determines if the two numbers are equal with certain precision.
 		static bool Data::_eq(long double num, long double data);
 	};
 	class Data::DataWrap
