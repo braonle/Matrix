@@ -22,6 +22,11 @@ namespace DataNS
 	class Data
 	{
 	public:
+		/** 
+			Adds an object of the same type to the current one. Should not be used directly
+			\param	dt	-	pointer to an object of the same type; otherwise a ErrCodes::bad_ptr would be returned 
+			\return			result of the operation
+		*/
 		virtual ErrCodes add(Data *dt) = 0;
 		virtual ErrCodes substract(Data *dt) = 0;
 		virtual ErrCodes multiply(Data *dt) = 0;
