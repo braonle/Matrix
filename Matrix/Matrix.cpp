@@ -319,9 +319,13 @@ bool DataNS::Data::DataWrap::isZero()
 {
 	return _ptr->isZero();
 }
+void DataNS::Data::DataWrap::output(ostream& ss)
+{
+	this->_ptr->output(ss);
+}
 ostream& DataNS::operator<<(ostream& out, Data::DataWrap& src)
 {
-	src._ptr->output(out);
+	src.output(out);
 	return out;
 }
 
@@ -548,6 +552,20 @@ MatrixNS::Matrix::Matrix(DataNS::Data::DataWrap ** input, int width, int height)
 	this->_width = width;
 	this->_height = height;
 }
+MatrixNS::Matrix::Matrix(Matrix & m)
+{
+	_width = m._width;
+	_height = m._height;
+	_table = new DataNS::Data::DataWrap*[_width];
+	for (int i = 0; i < _width; i++)
+	{
+		_table[i] = new DataNS::Data::DataWrap[_height];
+		for (int j = 0; j < _height; j++)
+		{
+			_table[i][j] = m._table[i][j];
+		}
+	}
+}
 MatrixNS::Matrix::~Matrix()
 {
 	for (int i = 0; i < _width; i++)
@@ -559,50 +577,135 @@ MatrixNS::Matrix::~Matrix()
 
 void MatrixNS::Matrix::add(Matrix & input) throw(ErrCodes)
 {
-	if (_width != input._width || _height != input._height) throw mMismatch;
+	const int tNumToStart = 40;
 
+	if (_width != input._width || _height != input._height) throw mMismatch;
+	if (_table == nullptr || input._table == nullptr) throw mEmpty;
+	
+	if (_width < tNumToStart) _simpleAdd(input);
+	else
+	{
+		ThreadInfo* info;
+		HANDLE threads[_threadNumber];
+		for (int i = 0; i < _threadNumber; i++)
+		{
+			info = new ThreadInfo(this, &input, i);
+			threads[i] = CreateThread(NULL, 0, _threadAdd, info, 0, NULL);
+		}
+		WaitForMultipleObjects(_threadNumber, threads, true, INFINITE);
+		for (int i = 0; i < _threadNumber; i++) CloseHandle(threads[i]);
+	} 
+}
+void MatrixNS::Matrix::_simpleAdd(Matrix& input)
+{
 	for (int i = 0; i < _width; i++)
 		for (int j = 0; j < _height; j++)
 		{
-			
+			this->_table[i][j] += input._table[i][j];
 		}
 	return;
 }
-
-void MatrixNS::Matrix::substract(Matrix & input) throw(ErrCodes)
+DWORD MatrixNS::Matrix::_threadAdd(LPVOID data)
 {
-	if (_width != input._width || _height != input._height) throw mMismatch;
+	ThreadInfo* dt = (ThreadInfo*)data;
 
-	HANDLE *threads = new HANDLE[_width];
-	TMP* str;
-
-	for (int i = 0; i < _width; i++)
-	{
-		str = new TMP(this, &input, i);
-		threads[i] = CreateThread(NULL, 0, &_threadSubstract, str, 0, NULL);
-	}
-	WaitForMultipleObjects(_width, threads, true, INFINITE);
-	
-	for (int i = 0; i < _width; i++)
-	{
-		CloseHandle(threads[i]);
-	}
-	delete[] threads;
-}
-
-DWORD MatrixNS::Matrix::_threadSubstract(LPVOID data)
-{
-	TMP* dt = (TMP*)data;
-
-	for (int j = 0; j < dt->target->_height; j++)
-	{
-		dt->target->_table[dt->seq][j] += dt->src->_table[dt->seq][j];
-	}
-
+	for (int i = dt->seq; i < dt->target->_width; i += _threadNumber)
+		for (int j = 0; j < dt->target->_height; j++)
+		{
+			dt->target->_table[i][j] += dt->src->_table[i][j];
+		}
 	dt->target = dt->src = nullptr;
 	delete dt;
 	return 0;
 }
+
+void MatrixNS::Matrix::substract(Matrix & input) throw(ErrCodes)
+{
+	const int tNumToStart = 40;
+
+	if (_width != input._width || _height != input._height) throw mMismatch;
+	if (_table == nullptr || input._table == nullptr) throw mEmpty;
+
+	if (_width < tNumToStart) _simpleSubstract(input);
+	else
+	{
+		ThreadInfo* info;
+		HANDLE threads[_threadNumber];
+		for (int i = 0; i < _threadNumber; i++)
+		{
+			info = new ThreadInfo(this, &input, i);
+			threads[i] = CreateThread(NULL, 0, _threadSubstract, info, 0, NULL);
+		}
+		WaitForMultipleObjects(_threadNumber, threads, true, INFINITE);
+		for (int i = 0; i < _threadNumber; i++) CloseHandle(threads[i]);
+	}
+}
+void MatrixNS::Matrix::_simpleSubstract(Matrix& input)
+{
+	for (int i = 0; i < _width; i++)
+		for (int j = 0; j < _height; j++)
+		{
+			this->_table[i][j] -= input._table[i][j];
+		}
+	return;
+}
+DWORD MatrixNS::Matrix::_threadSubstract(LPVOID data)
+{
+	ThreadInfo* dt = (ThreadInfo*)data;
+
+	for (int i = dt->seq; i < dt->target->_width; i += _threadNumber)
+		for (int j = 0; j < dt->target->_height; j++)
+		{
+			dt->target->_table[i][j] -= dt->src->_table[i][j];
+		}
+	dt->target = dt->src = nullptr;
+	delete dt;
+	return 0;
+}
+
+void MatrixNS::Matrix::output(ostream& ss)
+{
+	const char separator = ' ';
+	for (int i = 0; i < _height; i++)
+	{
+		for (int j = 0; j < _width; j++)
+		{
+			ss << _table[i][j];
+			if (j != _width - 1) ss << separator;
+		}
+		ss << endl;
+	}
+}
+ostream& MatrixNS::operator<<(ostream& ss, Matrix& m)
+{
+	m.output(ss);
+	return ss;
+}
+
+
+
+
+long long MatrixNS::timetest(Matrix& A, Matrix& B)
+{
+	int init0 = __rdtsc();
+	A._simpleAdd(B);
+	init0 -= __rdtsc();
+
+	int init1 = __rdtsc();
+	Matrix::ThreadInfo* info;
+	HANDLE threads[Matrix::_threadNumber];
+	for (int i = 0; i < Matrix::_threadNumber; i++)
+	{
+		info = new Matrix::ThreadInfo(&A, &B, i);
+		threads[i] = CreateThread(NULL, 0, Matrix::_threadAdd, info, 0, NULL);
+	}
+	WaitForMultipleObjects(Matrix::_threadNumber, threads, true, INFINITE);
+	for (int i = 0; i < Matrix::_threadNumber; i++) CloseHandle(threads[i]);
+	init1 -= __rdtsc();
+
+	return init0 - init1;
+}
+
 /*DataNS::Data*** MatrixNS::Matrix::parse(string*** str, int width, int length)
 {
 	DataNS::Data*** mas = new DataNS::Data**[width];

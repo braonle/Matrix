@@ -8,7 +8,7 @@ using namespace std;
 
 enum ErrCodes
 {
-	correct, bad_ptr, zero_div, no_mem, no_type_impl, unknown_type, bad_num_format, mMismatch, doubleTmpUsage
+	correct, bad_ptr, zero_div, no_mem, no_type_impl, unknown_type, bad_num_format, mMismatch, mEmpty, doubleTmpUsage
 };
 
 namespace DataNS
@@ -104,6 +104,7 @@ namespace DataNS
 		//Determines if the two numbers are equal with certain precision.
 		static bool Data::_eq(long double num, long double data);
 	};
+
 	class Data::DataWrap
 	{
 		Data* _ptr;
@@ -126,7 +127,7 @@ namespace DataNS
 		Data::DataWrap& restrictDelete();
 		bool isZero();
 		string toString();
-		friend ostream& operator<<(ostream& out, Data::DataWrap& src);
+		void output(ostream& ss);
 		~DataWrap();
 	};
 
@@ -212,6 +213,7 @@ namespace MatrixNS
 		DataNS::Data::DataWrap** _table;
 	public:
 		Matrix(DataNS::Data::DataWrap** input, int width = 1, int height = 1);
+		Matrix(Matrix& m);
 		void add(Matrix& input) throw (ErrCodes);
 		void substract(Matrix& input) throw (ErrCodes);
 		void multiply(Matrix& input) throw (ErrCodes);
@@ -226,17 +228,26 @@ namespace MatrixNS
 		int isSymmetric();
 		int isOrthogonal();
 		int isSquare();
+		void output(ostream& ss);
+		friend long long timetest(Matrix& A, Matrix& B);
 		~Matrix();
-	protected:
-		struct TMP
+	private:
+		struct ThreadInfo
 		{
-			TMP(Matrix *tg, Matrix * sr, int s) : src(sr), target(tg), seq(s){};
+			ThreadInfo(Matrix *tg, Matrix * sr, int s) : src(sr), target(tg), seq(s){};
 			Matrix *target, *src;
 			int seq;
 		};
-		
+		static const int _threadNumber = 4;
+
+		void _simpleAdd(Matrix& input) throw (ErrCodes);
+		static DWORD WINAPI _threadAdd(LPVOID data);
+		void _simpleSubstract(Matrix& input) throw (ErrCodes);
 		static DWORD WINAPI _threadSubstract(LPVOID);
 	};
 
+	ostream& operator<< (ostream& ss, Matrix& m);
+	
+	long long timetest(Matrix& A, Matrix& B);
 	string*** separ(vector < string *>, int width, int length);
 }
