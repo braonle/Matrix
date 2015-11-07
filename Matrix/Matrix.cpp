@@ -295,6 +295,10 @@ Data::DataWrap& Data::DataWrap::operator=(Data::DataWrap& src) throw(ErrCodes)
 	this->_tmpFlag = false;
 	return *this;
 }
+Data::DataWrap DataNS::Data::DataWrap::conjugate()
+{
+	return Data::DataWrap::getInstance(_ptr->conjugate()).restrictDelete();
+}
 Data::DataWrap * Data::DataWrap::clone()
 {
 	return new Data::DataWrap(_ptr->clone());
@@ -303,6 +307,7 @@ Data::DataWrap& Data::DataWrap::set(Data * src)
 {
 	if (_ptr != nullptr) delete _ptr;
 	_ptr = src;
+	_tmpFlag = FALSE;
 	return *this;
 }
 Data::DataWrap& Data::DataWrap::forceDelete()
@@ -322,6 +327,13 @@ bool Data::DataWrap::isZero()
 void Data::DataWrap::output(ostream& ss)
 {
 	this->_ptr->output(ss);
+}
+Data::DataWrap Data::DataWrap::getInstance(Data* src)
+{
+	Data::DataWrap ret(src);
+	ret.restrictDelete();
+	ret._opFlag = true;
+	return ret;
 }
 ostream& DataNS::operator<<(ostream& out, Data::DataWrap& src)
 {
@@ -568,20 +580,20 @@ Matrix::Matrix(Matrix & m)
 }
 Matrix::~Matrix()
 {
-	for (int i = 0; i < _width; i++)
+	for (int i = 0; i < _height; i++)
 	{
 		delete[] _table[i];
 	}
 	delete[] _table;
 }
-void Matrix::add(Matrix & input) throw(ErrCodes)
+Matrix& Matrix::add(Matrix & input) throw(ErrCodes)
 {
 	const int tNumToStart = 40;
 
 	if (_width != input._width || _height != input._height) throw mMismatch;
 	if (_table == nullptr || input._table == nullptr) throw mEmpty;
 	
-	if (_width < tNumToStart) _simpleAdd(input);
+	if (_height < tNumToStart) _simpleAdd(input);
 	else
 	{
 		ThreadInfo* info;
@@ -594,11 +606,12 @@ void Matrix::add(Matrix & input) throw(ErrCodes)
 		WaitForMultipleObjects(_threadNumber, threads, true, INFINITE);
 		for (int i = 0; i < _threadNumber; i++) CloseHandle(threads[i]);
 	} 
+	return *this;
 }
 void Matrix::_simpleAdd(Matrix& input)
 {
-	for (int i = 0; i < _width; i++)
-		for (int j = 0; j < _height; j++)
+	for (int i = 0; i < _height; i++)
+		for (int j = 0; j < _width; j++)
 		{
 			this->_table[i][j] += input._table[i][j];
 		}
@@ -608,8 +621,8 @@ DWORD Matrix::_threadAdd(LPVOID data)
 {
 	ThreadInfo* dt = (ThreadInfo*)data;
 
-	for (int i = dt->seq; i < dt->target->_width; i += _threadNumber)
-		for (int j = 0; j < dt->target->_height; j++)
+	for (int i = dt->seq; i < dt->target->_height; i += _threadNumber)
+		for (int j = 0; j < dt->target->_width; j++)
 		{
 			dt->target->_table[i][j] += dt->src->_table[i][j];
 		}
@@ -617,14 +630,14 @@ DWORD Matrix::_threadAdd(LPVOID data)
 	delete dt;
 	return 0;
 }
-void Matrix::substract(Matrix & input) throw(ErrCodes)
+Matrix& Matrix::substract(Matrix & input) throw(ErrCodes)
 {
 	const int tNumToStart = 40;
 
 	if (_width != input._width || _height != input._height) throw mMismatch;
 	if (_table == nullptr || input._table == nullptr) throw mEmpty;
 
-	if (_width < tNumToStart) _simpleSubstract(input);
+	if (_height < tNumToStart) _simpleSubstract(input);
 	else
 	{
 		ThreadInfo* info;
@@ -637,11 +650,12 @@ void Matrix::substract(Matrix & input) throw(ErrCodes)
 		WaitForMultipleObjects(_threadNumber, threads, true, INFINITE);
 		for (int i = 0; i < _threadNumber; i++) CloseHandle(threads[i]);
 	}
+	return *this;
 }
 void Matrix::_simpleSubstract(Matrix& input)
 {
-	for (int i = 0; i < _width; i++)
-		for (int j = 0; j < _height; j++)
+	for (int i = 0; i < _height; i++)
+		for (int j = 0; j < _width; j++)
 		{
 			this->_table[i][j] -= input._table[i][j];
 		}
@@ -651,8 +665,8 @@ DWORD Matrix::_threadSubstract(LPVOID data)
 {
 	ThreadInfo* dt = (ThreadInfo*)data;
 
-	for (int i = dt->seq; i < dt->target->_width; i += _threadNumber)
-		for (int j = 0; j < dt->target->_height; j++)
+	for (int i = dt->seq; i < dt->target->_height; i += _threadNumber)
+		for (int j = 0; j < dt->target->_width; j++)
 		{
 			dt->target->_table[i][j] -= dt->src->_table[i][j];
 		}
@@ -660,18 +674,161 @@ DWORD Matrix::_threadSubstract(LPVOID data)
 	delete dt;
 	return 0;
 }
-void Matrix::multiply(Data::DataWrap& input)
+Matrix& Matrix::multiply(Data::DataWrap& input)
 {
-	for (int i = 0; i < _width; i++)
-		for (int j = 0; j < _height; j++)
+	for (int i = 0; i < _height; i++)
+		for (int j = 0; j < _width; j++)
 			_table[i][j] *= input;
-			
+		
+	return *this;
 }
+Matrix* Matrix::conjugate()
+{
+	Data::DataWrap **arr = new Data::DataWrap*[_width];
 
-void Matrix::multiply(Data::DataWrap* input)
+	for (int i = 0; i < _width; i++)
+	{
+		arr[i] = new Data::DataWrap[_height];
+		for (int j = 0; j < _height; j++)
+		{
+			arr[i][j] = _table[j][i].conjugate().restrictDelete();
+		}
+	}
+	return new Matrix(arr, _height, _width);
+}
+Matrix& Matrix::multiply(Data::DataWrap* input)
 {
 	multiply(*input);
 	delete input;
+	return *this;
+}
+Matrix& MatrixNS::Matrix::multiplyL(Matrix & input) throw(ErrCodes)
+{
+	const int tNumToStart = 20;
+	if (input._width != _height) throw mMismatch;
+	if (_table == nullptr || input._table == nullptr) throw mEmpty;
+
+	if (_height < tNumToStart) _simpleLMultiply(input);
+	else
+	{
+		ThreadInfo* info;
+		HANDLE threads[_threadNumber];
+
+		Data::DataWrap** arr = new Data::DataWrap*[input._height];
+		for (int i = 0; i < input._height; i++)
+			arr[i] = new Data::DataWrap[_width];
+		
+		for (int i = 0; i < _threadNumber; i++)
+		{
+			info = new ThreadInfo(&input, this, i, &arr);
+			threads[i] = CreateThread(NULL, 0, _threadMultiply, info, 0, NULL);
+		}
+		WaitForMultipleObjects(_threadNumber, threads, true, INFINITE);
+		for (int i = 0; i < _threadNumber; i++) 
+			CloseHandle(threads[i]);
+		for (int i = 0; i < _height; i++)
+			delete[] _table[i];
+		delete[] _table;
+		_table = arr;
+		_height = input._height;
+	}
+	return *this;
+}
+Matrix& MatrixNS::Matrix::multiplyR(Matrix & input) throw(ErrCodes)
+{
+	const int tNumToStart = 20;
+	if (_width != input._height) throw mMismatch;
+	if (_table == nullptr || input._table == nullptr) throw mEmpty;
+
+	if (_height < tNumToStart) _simpleRMultiply(input);
+	else
+	{
+		ThreadInfo* info;
+		HANDLE threads[_threadNumber];
+
+		Data::DataWrap** arr = new Data::DataWrap*[_height];
+		for (int i = 0; i < _height; i++)
+			arr[i] = new Data::DataWrap[input._width];
+
+		for (int i = 0; i < _threadNumber; i++)
+		{
+			info = new ThreadInfo(this, &input, i, &arr);
+			threads[i] = CreateThread(NULL, 0, _threadMultiply, info, 0, NULL);
+		}
+		WaitForMultipleObjects(_threadNumber, threads, true, INFINITE);
+		for (int i = 0; i < _threadNumber; i++) 
+			CloseHandle(threads[i]);
+		for (int i = 0; i < _height; i++)
+			delete[] _table[i];
+		delete[] _table;
+		_table = arr;
+		_width = input._width;
+	}
+	return *this;
+}
+void MatrixNS::Matrix::_simpleLMultiply(Matrix & input) throw(ErrCodes)
+{
+	Data::DataWrap** arr = new Data::DataWrap*[input._height];
+
+	for (int i = 0; i < input._height; i++)
+	{
+		arr[i] = new Data::DataWrap[_width];
+		for (int j = 0; j < _width; j++)
+		{
+			arr[i][j].set(new RealData(0));
+			for (int k = 0; k < _height; k++)
+				arr[i][j] += (input._table[i][k] * _table[k][j]);
+		}
+	}
+	for (int i = 0; i < _height; i++)
+		delete[] _table[i];
+	delete _table;
+	_table = arr;
+	_height = input._height;
+}
+void MatrixNS::Matrix::_simpleRMultiply(Matrix & input) throw(ErrCodes)
+{
+	Data::DataWrap** arr = new Data::DataWrap*[_height];
+		
+	for (int i = 0; i < _height; i++)
+	{
+		arr[i] = new Data::DataWrap[input._width];
+		for (int j = 0; j < input._width; j++)
+		{
+			arr[i][j].set(new RealData(0));
+			for (int k = 0; k < _width; k++)
+				arr[i][j] += (_table[i][k] * input._table[k][j]);
+		}
+	}
+	for (int i = 0; i < _height; i++)
+		delete[] _table[i];
+	delete _table;
+	_table = arr;
+	_width = input._width;
+}
+DWORD MatrixNS::Matrix::_threadMultiply(LPVOID data)
+{
+	Matrix *lm = static_cast<ThreadInfo*>(data)->target,
+		*rm = static_cast<ThreadInfo*>(data)->src;
+	int seq = static_cast<ThreadInfo*>(data)->seq;
+	Data::DataWrap** arr = *static_cast<ThreadInfo*>(data)->src1;
+
+	for (int i = seq; i < lm->_height; i += _threadNumber)
+	{
+		for (int j = 0; j < rm->_width; j++)
+		{
+			arr[i][j].set(new RealData(0));
+			for (int k = 0; k < lm->_width; k++)
+				arr[i][j] += lm->_table[i][k] * rm->_table[k][j];
+		}
+	}
+
+	static_cast<ThreadInfo*>(data)->target = nullptr;
+	static_cast<ThreadInfo*>(data)->src = nullptr;
+	static_cast<ThreadInfo*>(data)->src1 = nullptr;
+	delete data;
+
+	return 0;
 }
 int Matrix::isSymmetric()
 {
@@ -679,10 +836,174 @@ int Matrix::isSymmetric()
 
 	for (int i = 0; i < _height; i++)
 		for (int j = i + 1; j < _width; j++)
-			if (!(_table[i][j] - _table[j][i]).isZero())
+			if (!(_table[i][j] - _table[j][i]).forceDelete().isZero())
 				return 1;
 
 	return 0;
+}
+int MatrixNS::Matrix::isUnitary()
+{
+	if (!isSquare()) return -1;
+
+	Matrix *a = this->conjugate(), *b = this->inverse();
+	bool res = a->equals(*b);
+	delete a;
+	delete b;
+	return res;
+}
+Data::DataWrap** Matrix::_diagUp(bool* sign)
+{
+	Data::DataWrap **arr = new Data::DataWrap*[_height];
+
+	for (int i = 0; i < _height; i++)
+	{
+		arr[i] = new Data::DataWrap[_width];
+		for (int j = 0; j < _width; j++)
+			arr[i][j] = _table[i][j];
+	}
+
+	*sign = true;
+	for (int i = 0; i < _width; i++)
+	{
+		bool zFlag = true;
+		for (int j = i; j < _height && zFlag; j++)
+			if (!arr[j][i].isZero())
+			{
+				zFlag = false;
+				if (i != j)
+				{
+					Data::DataWrap *tmp = arr[i];
+					arr[i] = arr[j];
+					arr[j] = tmp;
+					*sign = !*sign;
+				}
+			}
+		if (zFlag)
+		{
+			for (int j = 0; j < _width; j++)
+				delete[] arr[j];
+			delete arr;
+			return nullptr;
+		}
+		for (int j = i + 1; j < _height; j++)
+		{
+			for (int k = i + 1; k < _width && !arr[j][i].isZero(); k++)
+				arr[j][k] -= arr[i][k] * arr[j][i] / arr[i][i];
+			arr[j][i].set(new RealData(0));
+		}
+	}
+
+	return arr;
+}
+Matrix * MatrixNS::Matrix::inverse() throw(ErrCodes)
+{
+	if (!isSquare()) throw mBad;
+
+	Data::DataWrap **arr = new Data::DataWrap*[_height];
+	Data::DataWrap **ret = new Data::DataWrap*[_height];
+
+	for (int i = 0; i < _height; i++)
+	{
+		arr[i] = new Data::DataWrap[_width];
+		ret[i] = new Data::DataWrap[_width];
+		for (int j = 0; j < _width; j++)
+		{
+			arr[i][j] = _table[i][j];
+			if (j == i)
+				ret[i][j] = Data::DataWrap::getInstance(new RealData(1));
+			else
+				ret[i][j] = Data::DataWrap::getInstance(new RealData(0));
+		}
+	}
+
+	for (int i = 0; i < _width; i++)
+	{
+		bool zFlag = true;
+		for (int j = i; j < _height && zFlag; j++)
+			if (!arr[j][i].isZero())
+			{
+				zFlag = false;
+				if (i != j)
+				{
+					Data::DataWrap *tmp = arr[i];
+					arr[i] = arr[j];
+					arr[j] = tmp;
+
+					tmp = ret[i];
+					ret[i] = ret[j];
+					ret[j] = tmp;
+				}
+			}
+		if (zFlag)
+		{
+			for (int j = 0; j < _width; j++)
+			{
+				delete[] arr[j];
+				delete[] ret[j];
+			}
+			delete arr;
+			delete ret;
+			throw mZero;
+		}
+		for (int j = i + 1; j < _height; j++)
+		{
+			for (int k = i + 1; k < _width && !arr[j][i].isZero(); k++)
+				arr[j][k] -= arr[i][k] * arr[j][i] / arr[i][i];
+			for (int k = 0; k < _width && !arr[j][i].isZero(); k++)
+				ret[j][k] -= ret[i][k] * arr[j][i] / arr[i][i];
+			arr[j][i].set(new RealData(0));
+		}
+	}
+
+	for (int i = _height - 1; i >= 0; i--)
+	{
+		for (int j = 0; j < _width; j++)
+			ret[i][j] /= arr[i][i];
+		for (int k = i - 1; k >= 0; k--)
+			for (int j = 0; j < _width; j++)
+				ret[k][j] -= ret[i][j] * arr[k][i];
+	}
+
+	Matrix* X = new Matrix(ret, _width, _width);
+	for (int i = 0; i < _width; i++)
+		delete[] arr[i];
+	delete[] arr;
+	return X;
+}
+Data::DataWrap Matrix::determinant() throw(ErrCodes)
+{
+	if (!isSquare()) throw mBad;
+
+	bool sign;
+
+	if (_width == 2)
+	{
+		return _table[0][0] * _table[1][1] - _table[1][0] * _table[0][1];
+	} 
+	else if (_width == 3)
+	{
+		return _table[0][0] * (_table[1][1] * _table[2][2] - _table[1][2] * _table[2][1])
+			- _table[0][1] * (_table[1][0] * _table[2][2] - _table[2][0] * _table[1][2])
+			+ _table[0][2] * (_table[1][0] * _table[2][1] - _table[2][0] * _table[1][1]);
+	}
+
+	Data::DataWrap **arr = _diagUp(&sign);
+	if (arr == nullptr)
+	{
+		return Data::DataWrap::getInstance(new RealData(0));
+	}
+
+	Data::DataWrap res = arr[0][0].restrictDelete();
+	if (!sign)
+		res *= Data::DataWrap::getInstance(new RealData(-1));
+	for (int i = 1; i < _width && !res.isZero(); i++)
+		res *= arr[i][i];
+
+	for (int i = 0; i < _height; i++)
+		delete[] arr[i];
+	delete[] arr;
+
+	return res.restrictDelete();
 }
 Data::DataWrap Matrix::trace()
 {
@@ -695,12 +1016,16 @@ Data::DataWrap Matrix::trace()
 	res.restrictDelete();
 	return res;
 }
+DataNS::Data::DataWrap *** MatrixNS::Matrix::getContent()
+{
+	return &_table;
+}
 bool Matrix::isZero()
 {
 	bool res = true;
 	try
 	{
-		//res = determinant().isZero();
+		res = determinant().isZero();
 	}
 	catch (ErrCodes)
 	{
@@ -745,27 +1070,38 @@ ostream& MatrixNS::operator<<(ostream& ss, Matrix& m)
 
 
 
-
+/*
 long long MatrixNS::timetest(Matrix& A, Matrix& B)
 {
 	int init0 = __rdtsc();
-	A._simpleAdd(B);
+	A._simpleRMultiply(B);
 	init0 -= __rdtsc();
 
 	int init1 = __rdtsc();
 	Matrix::ThreadInfo* info;
 	HANDLE threads[Matrix::_threadNumber];
+	Data::DataWrap** arr = new Data::DataWrap*[A._height];
+	for (int i = 0; i < A._height; i++)
+		arr[i] = new Data::DataWrap[B._width];
+
 	for (int i = 0; i < Matrix::_threadNumber; i++)
 	{
-		info = new Matrix::ThreadInfo(&A, &B, i);
-		threads[i] = CreateThread(NULL, 0, Matrix::_threadAdd, info, 0, NULL);
+		info = new Matrix::ThreadInfo(&A, &B, i, &arr);
+		threads[i] = CreateThread(NULL, 0, Matrix::_threadMultiply, info, 0, NULL);
 	}
 	WaitForMultipleObjects(Matrix::_threadNumber, threads, true, INFINITE);
-	for (int i = 0; i < Matrix::_threadNumber; i++) CloseHandle(threads[i]);
+	for (int i = 0; i < Matrix::_threadNumber; i++) 
+		CloseHandle(threads[i]);
+	for (int i = 0; i < A._height; i++)
+		delete[] A._table[i];
+	delete[] A._table;
+	A._table = arr;
+	A._width = B._width;
 	init1 -= __rdtsc();
 
 	return init0 - init1;
 }
+*/
 
 /*DataNS::Data*** MatrixNS::Matrix::parse(string*** str, int width, int length)
 {
