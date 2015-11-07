@@ -194,7 +194,7 @@ Data::DataWrap Data::DataWrap::operator/(Data::DataWrap& divisor)
 	this->_tmpFlag = false;
 	return wr;
 }
-Data::DataWrap& DataNS::Data::DataWrap::operator+=(Data::DataWrap & param) throw(ErrCodes)
+Data::DataWrap& Data::DataWrap::operator+=(Data::DataWrap & param) throw(ErrCodes)
 {
 	Data *arg1 = this->_ptr;
 	Data *arg2 = param._ptr;
@@ -214,7 +214,7 @@ Data::DataWrap& DataNS::Data::DataWrap::operator+=(Data::DataWrap & param) throw
 	this->_tmpFlag = false;
 	return *this;
 }
-Data::DataWrap& DataNS::Data::DataWrap::operator-=(Data::DataWrap & deduction) throw(ErrCodes)
+Data::DataWrap& Data::DataWrap::operator-=(Data::DataWrap & deduction) throw(ErrCodes)
 {
 	Data *arg1 = this->_ptr;
 	Data *arg2 = deduction._ptr;
@@ -234,7 +234,7 @@ Data::DataWrap& DataNS::Data::DataWrap::operator-=(Data::DataWrap & deduction) t
 	this->_tmpFlag = false;
 	return *this;
 }
-Data::DataWrap& DataNS::Data::DataWrap::operator*=(Data::DataWrap & param) throw(ErrCodes)
+Data::DataWrap& Data::DataWrap::operator*=(Data::DataWrap & param) throw(ErrCodes)
 {
 	Data *arg1 = this->_ptr;
 	Data *arg2 = param._ptr;
@@ -254,7 +254,7 @@ Data::DataWrap& DataNS::Data::DataWrap::operator*=(Data::DataWrap & param) throw
 	this->_tmpFlag = false;
 	return *this;
 }
-Data::DataWrap& DataNS::Data::DataWrap::operator/=(Data::DataWrap & divisor) throw(ErrCodes)
+Data::DataWrap& Data::DataWrap::operator/=(Data::DataWrap & divisor) throw(ErrCodes)
 {
 	Data *arg1 = this->_ptr;
 	Data *arg2 = divisor._ptr;
@@ -295,31 +295,31 @@ Data::DataWrap& Data::DataWrap::operator=(Data::DataWrap& src) throw(ErrCodes)
 	this->_tmpFlag = false;
 	return *this;
 }
-Data::DataWrap * DataNS::Data::DataWrap::clone()
+Data::DataWrap * Data::DataWrap::clone()
 {
 	return new Data::DataWrap(_ptr->clone());
 }
-Data::DataWrap& DataNS::Data::DataWrap::set(Data * src)
+Data::DataWrap& Data::DataWrap::set(Data * src)
 {
 	if (_ptr != nullptr) delete _ptr;
 	_ptr = src;
 	return *this;
 }
-Data::DataWrap& DataNS::Data::DataWrap::forceDelete()
+Data::DataWrap& Data::DataWrap::forceDelete()
 {
 	this->_tmpFlag = FALSE;
 	return *this;
 }
-Data::DataWrap & DataNS::Data::DataWrap::restrictDelete()
+Data::DataWrap & Data::DataWrap::restrictDelete()
 {
 	this->_tmpFlag = TRUE;
 	return *this;
 }
-bool DataNS::Data::DataWrap::isZero()
+bool Data::DataWrap::isZero()
 {
 	return _ptr->isZero();
 }
-void DataNS::Data::DataWrap::output(ostream& ss)
+void Data::DataWrap::output(ostream& ss)
 {
 	this->_ptr->output(ss);
 }
@@ -417,7 +417,7 @@ ComplexData::ComplexData(RealData* src)
 	this->_im = 0;
 	delete ptr;
 }
-ErrCodes DataNS::ComplexData::add(Data * dt)
+ErrCodes ComplexData::add(Data * dt)
 {
 	ComplexData *ptr;
 	if (!(ptr = dynamic_cast<ComplexData*>(dt)))
@@ -428,7 +428,7 @@ ErrCodes DataNS::ComplexData::add(Data * dt)
 	this->_im += ptr->_im;
 	return correct;
 }
-ErrCodes DataNS::ComplexData::substract(Data * dt)
+ErrCodes ComplexData::substract(Data * dt)
 {
 	ComplexData *ptr;
 	if (!(ptr = dynamic_cast<ComplexData*>(dt)))
@@ -439,7 +439,7 @@ ErrCodes DataNS::ComplexData::substract(Data * dt)
 	this->_im -= ptr->_im;
 	return correct;
 }
-ErrCodes DataNS::ComplexData::multiply(Data * dt)
+ErrCodes ComplexData::multiply(Data * dt)
 {
 	ComplexData *ptr;
 	if (!(ptr = dynamic_cast<ComplexData*>(dt)))
@@ -451,7 +451,7 @@ ErrCodes DataNS::ComplexData::multiply(Data * dt)
 	this->_re = tmp;
 	return correct;
 }
-ErrCodes DataNS::ComplexData::divide(Data * dt)
+ErrCodes ComplexData::divide(Data * dt)
 {
 	ComplexData *ptr;
 	if (!(ptr = dynamic_cast<ComplexData*>(dt)))
@@ -472,11 +472,11 @@ ErrCodes DataNS::ComplexData::divide(Data * dt)
 
 	return correct;
 }
-Data* DataNS::ComplexData::conjugate()
+Data* ComplexData::conjugate()
 {
 	return new ComplexData(this->_re, -(this->_im));
 }
-void DataNS::ComplexData::output(ostream& ss)
+void ComplexData::output(ostream& ss)
 {
 	
 	if (_eq(_im, 0))
@@ -525,34 +525,34 @@ void DataNS::ComplexData::output(ostream& ss)
 		}
 	}
 }
-long double DataNS::ComplexData::abs(void)
+long double ComplexData::abs(void)
 {
 	return sqrt(_re*_re + _im*_im);
 }
-void* DataNS::ComplexData::_getData()
+void* ComplexData::_getData()
 {
 	long double *ptr = new long double[2];
 	ptr[0] = this->_re;
 	ptr[1] = this->_im;	
 	return ptr;
 }
-bool DataNS::ComplexData::isZero()
+bool ComplexData::isZero()
 {
 	return _eq(_re, 0) && _eq(_im, 0);
 }
-DataNS::ComplexData::~ComplexData() {}
-Data * DataNS::ComplexData::clone()
+ComplexData::~ComplexData() {}
+Data * ComplexData::clone()
 {
 	return new DataNS::ComplexData(*this);
 }
 
-MatrixNS::Matrix::Matrix(DataNS::Data::DataWrap ** input, int width, int height)
+Matrix::Matrix(Data::DataWrap ** input, int width, int height)
 {
 	this->_table = input;
 	this->_width = width;
 	this->_height = height;
 }
-MatrixNS::Matrix::Matrix(Matrix & m)
+Matrix::Matrix(Matrix & m)
 {
 	_width = m._width;
 	_height = m._height;
@@ -566,7 +566,7 @@ MatrixNS::Matrix::Matrix(Matrix & m)
 		}
 	}
 }
-MatrixNS::Matrix::~Matrix()
+Matrix::~Matrix()
 {
 	for (int i = 0; i < _width; i++)
 	{
@@ -574,8 +574,7 @@ MatrixNS::Matrix::~Matrix()
 	}
 	delete[] _table;
 }
-
-void MatrixNS::Matrix::add(Matrix & input) throw(ErrCodes)
+void Matrix::add(Matrix & input) throw(ErrCodes)
 {
 	const int tNumToStart = 40;
 
@@ -596,7 +595,7 @@ void MatrixNS::Matrix::add(Matrix & input) throw(ErrCodes)
 		for (int i = 0; i < _threadNumber; i++) CloseHandle(threads[i]);
 	} 
 }
-void MatrixNS::Matrix::_simpleAdd(Matrix& input)
+void Matrix::_simpleAdd(Matrix& input)
 {
 	for (int i = 0; i < _width; i++)
 		for (int j = 0; j < _height; j++)
@@ -605,7 +604,7 @@ void MatrixNS::Matrix::_simpleAdd(Matrix& input)
 		}
 	return;
 }
-DWORD MatrixNS::Matrix::_threadAdd(LPVOID data)
+DWORD Matrix::_threadAdd(LPVOID data)
 {
 	ThreadInfo* dt = (ThreadInfo*)data;
 
@@ -618,8 +617,7 @@ DWORD MatrixNS::Matrix::_threadAdd(LPVOID data)
 	delete dt;
 	return 0;
 }
-
-void MatrixNS::Matrix::substract(Matrix & input) throw(ErrCodes)
+void Matrix::substract(Matrix & input) throw(ErrCodes)
 {
 	const int tNumToStart = 40;
 
@@ -640,7 +638,7 @@ void MatrixNS::Matrix::substract(Matrix & input) throw(ErrCodes)
 		for (int i = 0; i < _threadNumber; i++) CloseHandle(threads[i]);
 	}
 }
-void MatrixNS::Matrix::_simpleSubstract(Matrix& input)
+void Matrix::_simpleSubstract(Matrix& input)
 {
 	for (int i = 0; i < _width; i++)
 		for (int j = 0; j < _height; j++)
@@ -649,7 +647,7 @@ void MatrixNS::Matrix::_simpleSubstract(Matrix& input)
 		}
 	return;
 }
-DWORD MatrixNS::Matrix::_threadSubstract(LPVOID data)
+DWORD Matrix::_threadSubstract(LPVOID data)
 {
 	ThreadInfo* dt = (ThreadInfo*)data;
 
@@ -662,8 +660,71 @@ DWORD MatrixNS::Matrix::_threadSubstract(LPVOID data)
 	delete dt;
 	return 0;
 }
+void Matrix::multiply(Data::DataWrap& input)
+{
+	for (int i = 0; i < _width; i++)
+		for (int j = 0; j < _height; j++)
+			_table[i][j] *= input;
+			
+}
 
-void MatrixNS::Matrix::output(ostream& ss)
+void Matrix::multiply(Data::DataWrap* input)
+{
+	multiply(*input);
+	delete input;
+}
+int Matrix::isSymmetric()
+{
+	if (!isSquare()) return -1;
+
+	for (int i = 0; i < _height; i++)
+		for (int j = i + 1; j < _width; j++)
+			if (!(_table[i][j] - _table[j][i]).isZero())
+				return 1;
+
+	return 0;
+}
+Data::DataWrap Matrix::trace()
+{
+	if (!isSquare()) throw mBad;
+
+	Data::DataWrap res = _table[0][0];
+	for (int i = 1; i < _width; i++)
+		res *= _table[i][i];
+
+	res.restrictDelete();
+	return res;
+}
+bool Matrix::isZero()
+{
+	bool res = true;
+	try
+	{
+		//res = determinant().isZero();
+	}
+	catch (ErrCodes)
+	{
+		res = false;
+	}
+	return res;
+}
+bool Matrix::equals(Matrix& src)
+{
+	if (_width != src._width || _height != src._height) 
+		return false;
+
+	for (int i = 0; i < _width; i++)
+		for (int j = 0; j < _height; j++)
+			if (!(_table[i][j] - src._table[i][j]).forceDelete().isZero()) 
+				return false;
+
+	return true;
+}
+bool Matrix::isSquare()
+{
+	return _width == _height;
+}
+void Matrix::output(ostream& ss)
 {
 	const char separator = ' ';
 	for (int i = 0; i < _height; i++)

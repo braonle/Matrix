@@ -8,7 +8,7 @@ using namespace std;
 
 enum ErrCodes
 {
-	correct, bad_ptr, zero_div, no_mem, no_type_impl, unknown_type, bad_num_format, mMismatch, mEmpty, doubleTmpUsage
+	correct, bad_ptr, zero_div, no_mem, no_type_impl, unknown_type, bad_num_format, mMismatch, mEmpty, doubleTmpUsage, mBad
 };
 
 namespace DataNS
@@ -96,6 +96,7 @@ namespace DataNS
 		*/
 		class DataWrap;
 	private:
+
 		//Implements type conversion for Data inheritants. Should be extended if new types and added.
 		static void _argConvert(Data** arg1, Data** arg2) throw (ErrCodes);
 		//Returns the code of Data inheritant. Should be extended if new types and added.
@@ -216,18 +217,21 @@ namespace MatrixNS
 		Matrix(Matrix& m);
 		void add(Matrix& input) throw (ErrCodes);
 		void substract(Matrix& input) throw (ErrCodes);
-		void multiply(Matrix& input) throw (ErrCodes);
+		void multiply(DataNS::Data::DataWrap& input) throw (ErrCodes);
+		void multiply(DataNS::Data::DataWrap* input) throw (ErrCodes);
+		void multiplyL(Matrix& input) throw (ErrCodes);
+		void multiplyR(Matrix& input) throw (ErrCodes);
 		Matrix* inverse() throw (ErrCodes);
-		DataNS::Data::DataWrap* determinant() throw (ErrCodes);
-		DataNS::Data::DataWrap* trace() throw (ErrCodes);
-		ErrCodes scalarMultiply(DataNS::Data* num);
+		DataNS::Data::DataWrap determinant() throw (ErrCodes);
+		DataNS::Data::DataWrap trace() throw (ErrCodes);
 		Matrix* transpose();
 		Matrix* subMatrix(int wStart, int lStart, int wEnd, int lEnd);
 		bool isZero();
 		int isDefinitive();
 		int isSymmetric();
 		int isOrthogonal();
-		int isSquare();
+		bool equals(Matrix& src);
+		bool isSquare();
 		void output(ostream& ss);
 		friend long long timetest(Matrix& A, Matrix& B);
 		~Matrix();
