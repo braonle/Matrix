@@ -260,9 +260,10 @@ namespace DataNS
 		void output(ostream& ss);
 		/**
 			Allows to create on object with defined contents; 
-			useful in calculations for creating a constant in expressions
+			useful in calculations for creating a constant in expressions;
+			similar to result returned by operators
 			
-			\return		permanent instance of DataWrap with defined contents
+			\return		temporary instance of DataWrap with defined contents
 		*/
 		static Data::DataWrap getInstance(Data* src);
 		~DataWrap();
