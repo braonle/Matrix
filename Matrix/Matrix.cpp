@@ -1062,6 +1062,14 @@ void Matrix::output(ostream& ss)
 		ss << endl;
 	}
 }
+int MatrixNS::Matrix::getHeight()
+{
+	return _height;
+}
+int MatrixNS::Matrix::getWidth()
+{
+	return _width;
+}
 ostream& MatrixNS::operator<<(ostream& ss, Matrix& m)
 {
 	m.output(ss);

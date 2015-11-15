@@ -468,6 +468,8 @@ namespace MatrixNS
 			Writes this instance to the output stream as a text (std::string)
 		*/
 		void output(ostream& ss);
+		int getHeight();
+		int getWidth();
 		~Matrix();
 	private:
 
