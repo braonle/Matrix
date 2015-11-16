@@ -568,7 +568,7 @@ Matrix::Matrix(Matrix & m)
 {
 	_width = m._width;
 	_height = m._height;
-	_table = new DataNS::Data::DataWrap*[_width];
+	_table = new DataNS::Data::DataWrap*[_height];
 	for (int i = 0; i < _height; i++)
 	{
 		_table[i] = new DataNS::Data::DataWrap[_height];
