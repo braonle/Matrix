@@ -569,10 +569,10 @@ Matrix::Matrix(Matrix & m)
 	_width = m._width;
 	_height = m._height;
 	_table = new DataNS::Data::DataWrap*[_width];
-	for (int i = 0; i < _width; i++)
+	for (int i = 0; i < _height; i++)
 	{
 		_table[i] = new DataNS::Data::DataWrap[_height];
-		for (int j = 0; j < _height; j++)
+		for (int j = 0; j < _width; j++)
 		{
 			_table[i][j] = m._table[i][j];
 		}
