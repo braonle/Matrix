@@ -782,7 +782,7 @@ void MatrixNS::Matrix::_simpleLMultiply(Matrix & input) throw(ErrCodes)
 	}
 	for (int i = 0; i < _height; i++)
 		delete[] _table[i];
-	delete _table;
+	delete[] _table;
 	_table = arr;
 	_height = input._height;
 }
@@ -802,7 +802,7 @@ void MatrixNS::Matrix::_simpleRMultiply(Matrix & input) throw(ErrCodes)
 	}
 	for (int i = 0; i < _height; i++)
 		delete[] _table[i];
-	delete _table;
+	delete[] _table;
 	_table = arr;
 	_width = input._width;
 }
