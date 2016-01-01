@@ -203,11 +203,11 @@ Data::DataWrap& Data::DataWrap::operator+=(Data::DataWrap & param) throw(ErrCode
 	ErrCodes err = arg1->add(arg2);
 	if (err != correct) throw err;
 
-	if (this->_ptr != arg1)
+	if (this->_ptr != param._ptr)
 	{
 		delete this->_ptr;
-		this->_ptr = arg1;
 	}
+	this->_ptr = arg1;
 	this->_tmpFlag = false;
 	if (arg2 != param._ptr) delete arg2;
 	param._tmpFlag = false;
@@ -223,11 +223,11 @@ Data::DataWrap& Data::DataWrap::operator-=(Data::DataWrap & deduction) throw(Err
 	ErrCodes err = arg1->substract(arg2);
 	if (err != correct) throw err;
 
-	if (this->_ptr != arg1)
+	if (this->_ptr != deduction._ptr)
 	{
 		delete this->_ptr;
-		this->_ptr = arg1;
 	}
+	this->_ptr = arg1;
 	this->_tmpFlag = false;
 	if (arg2 != deduction._ptr) delete arg2;
 	deduction._tmpFlag = false;
@@ -243,11 +243,11 @@ Data::DataWrap& Data::DataWrap::operator*=(Data::DataWrap & param) throw(ErrCode
 	ErrCodes err = arg1->multiply(arg2);
 	if (err != correct) throw err;
 
-	if (this->_ptr != arg1)
+	if (this->_ptr != param._ptr)
 	{
 		delete this->_ptr;
-		this->_ptr = arg1;
 	}
+	this->_ptr = arg1;
 	this->_tmpFlag = false;
 	if (arg2 != param._ptr) delete arg2;
 	param._tmpFlag = false;
@@ -263,11 +263,11 @@ Data::DataWrap& Data::DataWrap::operator/=(Data::DataWrap & divisor) throw(ErrCo
 	ErrCodes err = arg1->divide(arg2);
 	if (err != correct) throw err;
 
-	if (this->_ptr != arg1)
+	if (this->_ptr != divisor._ptr)
 	{
 		delete this->_ptr;
-		this->_ptr = arg1;
 	}
+	this->_ptr = arg1;
 	this->_tmpFlag = false;
 	if (arg2 != divisor._ptr) delete arg2;
 	divisor._tmpFlag = false;
